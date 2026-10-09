@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ghi Chú Công Việc</title> <!-- Tên ngụy trang -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+  <!-- 1. MÀN HÌNH ĐĂNG NHẬP / ĐĂNG KÝ -->
+  <div id="auth-screen" class="card">
+    <h2>Đăng Nhập Hộp Thư</h2>
+    <input type="email" id="auth-email" placeholder="Email">
+    <input type="password" id="auth-password" placeholder="Mật khẩu">
+    <button onclick="login()">Đăng Nhập</button>
+    <button onclick="register()" class="btn-sec">Đăng Ký Tài Khoản</button>
+  </div>
+
+  <!-- 2. MÀN HÌNH CHÍNH (Giao diện Chat & Trang cá nhân) -->
+  <div id="app-screen" class="card hidden">
+    <!-- Header Trang Cá Nhân -->
+    <div class="profile-bar">
+      <img id="my-avatar" src="https://via.placeholder.com/40" alt="Avatar">
+      <div class="profile-info">
+        <b id="my-name">Tên hiển thị</b>
+        <small id="my-email"></small>
+      </div>
+      <button onclick="editProfile()" class="btn-sm">Sửa Profile</button>
+      <button onclick="logout()" class="btn-sm btn-danger">Thoát</button>
+    </div>
+
+    <hr>
+
+    <!-- Chọn Người Nhận -->
+    <div class="receiver-select">
+      <label>Nhắn riêng với Email:</label>
+      <input type="email" id="target-email" placeholder="Nhập email người cần chat...">
+      <button onclick="startChat()">Vào Chat</button>
+    </div>
+
+    <!-- Khung Tin Nhắn -->
+    <div id="chat-box" class="chat-box"></div>
+
+    <!-- Ô Nhập Tin Nhắn -->
+    <div class="input-bar">
+      <input type="text" id="msg-input" placeholder="Nhập tin nhắn...">
+      <button onclick="sendMsg()">Gửi</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
