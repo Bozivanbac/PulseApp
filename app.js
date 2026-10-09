@@ -1,21 +1,23 @@
-// 1. CẤU HÌNH FIREBASE (Dán mã của bạn vào đây)
+// 1. CẤU HÌNH FIREBASE CHUẨN (ĐÃ LẤY TỪ ẢNH CỦA BẠN VÀ SỬA LỖI DỊCH)
 const firebaseConfig = {
-  apiKey: "ĐIỀN_API_KEY_CỦA_BẠN",
-  authDomain: "ĐIỀN_AUTH_DOMAIN",
-  databaseURL: "ĐIỀN_DATABASE_URL",
-  projectId: "ĐIỀN_PROJECT_ID",
-  storageBucket: "ĐIỀN_STORAGE_BUCKET",
-  messagingSenderId: "ĐIỀN_SENDER_ID",
-  appId: "ĐIỀN_APP_ID"
+  apiKey: "AIzaSyCc0CLn5AWsQ6qzd9EIRvf4H_Lw6dcZRoM",
+  authDomain: "menu-68f29.firebaseapp.com",
+  databaseURL: "https://menu-68f29-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "menu-68f29",
+  storageBucket: "menu-68f29.firebasestorage.app",
+  messagingSenderId: "677638363904",
+  appId: "1:677638363904:web:8701d97a168c77672371e5",
+  measurementId: "G-3GFLZP383T"
 };
 
+// Khởi tạo dịch vụ
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
 
 let currentUser = null;
 let activeTargetEmail = "";
-const TWO_MINS_MS = 2 * 60 * 1000; // 120.000 ms = 2 phút
+const TWO_MINS_MS = 2 * 60 * 1000; // Khoảng thời gian khóa: 120.000 ms = 2 phút
 
 // 2. THEO DÕI TRẠNG THÁI ĐĂNG NHẬP
 auth.onAuthStateChanged(user => {
@@ -34,8 +36,10 @@ auth.onAuthStateChanged(user => {
 function register() {
   const e = document.getElementById("auth-email").value;
   const p = document.getElementById("auth-password").value;
+  if (!e || !p) return alert("Vui lòng nhập Email và Mật khẩu!");
+  
   auth.createUserWithEmailAndPassword(e, p).then(res => {
-    // Tạo profile mặc định
+    // Tạo thông tin trang cá nhân mặc định
     db.ref("users/" + res.user.uid).set({
       email: e,
       name: e.split("@")[0],
@@ -47,6 +51,8 @@ function register() {
 function login() {
   const e = document.getElementById("auth-email").value;
   const p = document.getElementById("auth-password").value;
+  if (!e || !p) return alert("Vui lòng nhập Email và Mật khẩu!");
+  
   auth.signInWithEmailAndPassword(e, p).catch(err => alert(err.message));
 }
 
@@ -92,7 +98,7 @@ function listenMessages() {
 
     Object.keys(data).forEach(msgId => {
       const msg = data[msgId];
-      // Chỉ hiển thị tin nhắn giữa 2 người này
+      // Lọc hiển thị tin nhắn riêng giữa 2 tài khoản
       const isRelate = (msg.sender === currentUser.email && msg.receiver === activeTargetEmail) ||
                        (msg.sender === activeTargetEmail && msg.receiver === currentUser.email);
 
@@ -174,4 +180,3 @@ function recallMsg(msgId, timestamp) {
       isRecalled: true
     });
   }
-}
