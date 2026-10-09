@@ -1,4 +1,4 @@
-// 1. CẤU HÌNH FIREBASE CHUẨN (ĐÃ LẤY TỪ ẢNH CỦA BẠN VÀ SỬA LỖI DỊCH)
+// 1. CẤU HÌNH FIREBASE CHUẨN DỰ ÁN MENU-68F29
 const firebaseConfig = {
   apiKey: "AIzaSyCc0CLn5AWsQ6qzd9EIRvf4H_Lw6dcZRoM",
   authDomain: "menu-68f29.firebaseapp.com",
@@ -10,7 +10,7 @@ const firebaseConfig = {
   measurementId: "G-3GFLZP383T"
 };
 
-// Khởi tạo dịch vụ
+// Khởi tạo dịch vụ Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
@@ -32,40 +32,44 @@ auth.onAuthStateChanged(user => {
   }
 });
 
-// 3. ĐĂNG KÝ / ĐĂNG NHẬP
+// 3. XỬ LÝ ĐĂNG KÝ & ĐĂNG NHẬP
 function register() {
-  const e = document.getElementById("auth-email").value;
-  const p = document.getElementById("auth-password").value;
-  if (!e || !p) return alert("Vui lòng nhập Email và Mật khẩu!");
-  
-  auth.createUserWithEmailAndPassword(e, p).then(res => {
-    // Tạo thông tin trang cá nhân mặc định
-    db.ref("users/" + res.user.uid).set({
-      email: e,
-      name: e.split("@")[0],
-      avatar: "https://via.placeholder.com/100"
-    });
-  }).catch(err => alert(err.message));
+  const e = document.getElementById("auth-email").value.trim();
+  const p = document.getElementById("auth-password").value.trim();
+  if (!e || !p) return alert("Vui lòng nhập đầy đủ Email và Mật khẩu!");
+
+  auth.createUserWithEmailAndPassword(e, p)
+    .then(res => {
+      db.ref("users/" + res.user.uid).set({
+        email: e,
+        name: e.split("@")[0],
+        avatar: "https://via.placeholder.com/100"
+      });
+    })
+    .catch(err => alert("Lỗi đăng ký: " + err.message));
 }
 
 function login() {
-  const e = document.getElementById("auth-email").value;
-  const p = document.getElementById("auth-password").value;
-  if (!e || !p) return alert("Vui lòng nhập Email và Mật khẩu!");
-  
-  auth.signInWithEmailAndPassword(e, p).catch(err => alert(err.message));
+  const e = document.getElementById("auth-email").value.trim();
+  const p = document.getElementById("auth-password").value.trim();
+  if (!e || !p) return alert("Vui lòng nhập đầy đủ Email và Mật khẩu!");
+
+  auth.signInWithEmailAndPassword(e, p)
+    .catch(err => alert("Lỗi đăng nhập: " + err.message));
 }
 
-function logout() { auth.signOut(); }
+function logout() {
+  auth.signOut();
+}
 
-// 4. TRANG CÁ NHÂN (PROFILE)
+// 4. QUẢN LÝ TRANG CÁ NHÂN (PROFILE)
 function loadUserProfile() {
   db.ref("users/" + currentUser.uid).on("value", snapshot => {
     const data = snapshot.val();
     if (data) {
-      document.getElementById("my-name").innerText = data.name;
-      document.getElementById("my-email").innerText = data.email;
-      document.getElementById("my-avatar").src = data.avatar;
+      document.getElementById("my-name").innerText = data.name || currentUser.email;
+      document.getElementById("my-email").innerText = data.email || currentUser.email;
+      if (data.avatar) document.getElementById("my-avatar").src = data.avatar;
     }
   });
 }
@@ -74,14 +78,14 @@ function editProfile() {
   const newName = prompt("Nhập tên hiển thị mới:");
   const newAvatar = prompt("Nhập link URL ảnh đại diện:");
   if (newName || newAvatar) {
-    db.ref("users/" + currentUser.uid).update({
-      name: newName || document.getElementById("my-name").innerText,
-      avatar: newAvatar || document.getElementById("my-avatar").src
-    });
+    const updates = {};
+    if (newName) updates.name = newName;
+    if (newAvatar) updates.avatar = newAvatar;
+    db.ref("users/" + currentUser.uid).update(updates);
   }
 }
 
-// 5. KHU VỰC CHAT REALTIME
+// 5. LỌC VÀ HIỂN THỊ CHAT REALTIME
 function startChat() {
   activeTargetEmail = document.getElementById("target-email").value.trim();
   if (!activeTargetEmail) return alert("Vui lòng nhập Email người nhận!");
@@ -93,12 +97,12 @@ function listenMessages() {
     const chatBox = document.getElementById("chat-box");
     chatBox.innerHTML = "";
     const data = snapshot.val();
-    
+
     if (!data) return;
 
     Object.keys(data).forEach(msgId => {
       const msg = data[msgId];
-      // Lọc hiển thị tin nhắn riêng giữa 2 tài khoản
+      // Lọc tin nhắn hai chiều riêng tư giữa 2 tài khoản
       const isRelate = (msg.sender === currentUser.email && msg.receiver === activeTargetEmail) ||
                        (msg.sender === activeTargetEmail && msg.receiver === currentUser.email);
 
@@ -110,7 +114,7 @@ function listenMessages() {
   });
 }
 
-// 6. HIỂN THỊ TIN NHẮN & KIỂM TRA LOGIC 2 PHÚT
+// 6. DỰNG GIAO DIỆN TIN NHẮN & KHÓA SỬA/THU HỒI SAU 2 PHÚT
 function renderMessage(msgId, msg) {
   const chatBox = document.getElementById("chat-box");
   const isMe = msg.sender === currentUser.email;
@@ -121,32 +125,34 @@ function renderMessage(msgId, msg) {
   div.className = `msg ${isMe ? "me" : ""}`;
 
   let contentText = msg.isRecalled ? "<i>Tin nhắn đã được thu hồi</i>" : msg.content;
-  if (msg.isEdited && !msg.isRecalled) contentText += " <small>(Đã sửa)</small>";
+  if (msg.isEdited && !msg.isRecalled) contentText += " <small style='opacity:0.6'>(Đã sửa)</small>";
 
   let actionButtons = "";
-  // Chỉ chính chủ gửi và chưa quá 2 phút mới hiện nút Sửa/Thu hồi
+  // Chỉ chính chủ gửi và trong khoảng thời gian 2 phút mới hiện nút thao tác
   if (isMe && !msg.isRecalled && isUnderTwoMins) {
+    const safeContent = msg.content.replace(/'/g, "\\'");
     actionButtons = `
       <div class="msg-actions">
-        <span onclick="editMsg('${msgId}', '${msg.content}', ${msg.timestamp})">Sửa</span>
+        <span onclick="editMsg('${msgId}', '${safeContent}', ${msg.timestamp})">Sửa</span>
         <span onclick="recallMsg('${msgId}', ${msg.timestamp})">Thu hồi</span>
       </div>
     `;
   }
 
-  div.innerHTML = `<div>${contentText}</div>${actionButtons}`;
+  div.innerHTML = `<div class="msg-content">${contentText}</div>${actionButtons}`;
   chatBox.appendChild(div);
 }
 
-// 7. GỬI TIN NHẮN MỚI
+// 7. GỬI TIN NHẮN
 function sendMsg() {
   const input = document.getElementById("msg-input");
-  if (!input.value.trim() || !activeTargetEmail) return;
+  const text = input.value.trim();
+  if (!text || !activeTargetEmail) return;
 
   db.ref("messages").push({
     sender: currentUser.email,
     receiver: activeTargetEmail,
-    content: input.value,
+    content: text,
     timestamp: Date.now(),
     isEdited: false,
     isRecalled: false
@@ -154,7 +160,7 @@ function sendMsg() {
   input.value = "";
 }
 
-// 8. CHỈNH SỬA TIN NHẮN (KIỂM TRA LẠI THỜI GIAN KHI BẤM)
+// 8. SỬA TIN NHẮN (KIỂM TRA LẠI THỜI GIAN)
 function editMsg(msgId, oldContent, timestamp) {
   if (Date.now() - timestamp > TWO_MINS_MS) {
     alert("Đã quá 2 phút! Không thể chỉnh sửa nữa.");
@@ -169,7 +175,7 @@ function editMsg(msgId, oldContent, timestamp) {
   }
 }
 
-// 9. THU HỒI TIN NHẮN (KIỂM TRA LẠI THỜI GIAN KHI BẤM)
+// 9. THU HỒI TIN NHẮN (KIỂM TRA LẠI THỜI GIAN)
 function recallMsg(msgId, timestamp) {
   if (Date.now() - timestamp > TWO_MINS_MS) {
     alert("Đã quá 2 phút! Không thể thu hồi nữa.");
@@ -180,3 +186,4 @@ function recallMsg(msgId, timestamp) {
       isRecalled: true
     });
   }
+}
